@@ -127,7 +127,15 @@ export default function CreateOrderPage() {
   const updateStartDate = (idx: number, newStartDate: string) => {
     setItems(prev => prev.map((item, i) => {
       if (i !== idx) return item
+
+      // Validate date string
+      if (!newStartDate || newStartDate === '') return item
+
       const startDate = new Date(newStartDate)
+
+      // Check if date is valid
+      if (isNaN(startDate.getTime())) return item
+
       const endDate = calculateEndDate(startDate, item.duration as "ONE_MONTH" | "THREE_MONTHS")
       return {
         ...item,
