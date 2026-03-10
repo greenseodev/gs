@@ -1,0 +1,188 @@
+"use client"
+
+import { useState } from "react"
+import { Globe, Calendar, CheckCircle2, XCircle, ChevronDown, ChevronUp, Edit3 } from "lucide-react"
+import { formatCurrency, formatDate, formatType, formatDurationShort, calcItemTotal } from "@/lib/formatters"
+import { getDisplayStatus, getDaysRemaining, isExpiringSoon as checkExpiringSoon, isExpired as checkExpired } from "@/lib/orderUtils"
+
+const PREVIEW_COUNT = 4
+
+type TextlinkEntry = {
+  id: string
+  anchorText: string
+  targetUrl: string
+  position: number
+}
+
+type OrderItemCardProps = {
+  item: {
+    id: string
+    type: string
+    duration: string
+    unitPrice: number
+    startDate: string
+    endDate: string
+    status: string
+    website: { id: string; domain: string; dr: number; traffic: number }
+    entries: TextlinkEntry[]
+  }
+  isSelected: boolean
+  onToggle: (id: string) => void
+  onEditEntries?: (itemId: string, entries: TextlinkEntry[]) => void
+}
+
+export default function OrderItemCard({ item, isSelected, onToggle, onEditEntries }: OrderItemCardProps) {
+  const [expanded, setExpanded] = useState(false)
+
+  // Use dynamic status calculation instead of DB status
+  const displayStatus = getDisplayStatus(item)
+  const isActive = displayStatus === "ACTIVE"
+  const daysLeft = getDaysRemaining(item.endDate)
+  const isExpiringSoon = checkExpiringSoon(item.endDate)
+  const isExpired = checkExpired(item.endDate)
+
+  const totalPrice = calcItemTotal(item.unitPrice, item.entries.length)
+  const visibleEntries = expanded ? item.entries : item.entries.slice(0, PREVIEW_COUNT)
+  const hiddenCount = item.entries.length - PREVIEW_COUNT
+
+  const cleanUrl = (url: string) => url.replace(/^https?:\/\//, "").replace(/^www\./, "")
+
+  return (
+    <div
+      className={`
+        px-5 py-4 cursor-pointer transition-all
+        ${isSelected ? "bg-[#fcd535]/5 border-l-2 border-[#fcd535]" : "hover:bg-[#1e2329]"}
+        ${isExpiringSoon && !isExpired ? "border-2 border-[#f0b90b]/40 animate-pulse-slow" : ""}
+        ${isExpired ? "border-2 border-[#f6465d]/40 opacity-60" : ""}
+      `}
+    >
+      {/* Header */}
+      <div className="flex items-start gap-3 mb-3" onClick={() => onToggle(item.id)}>
+        {/* Checkbox */}
+        <div className={`w-4 h-4 rounded border flex items-center justify-center mt-1 flex-shrink-0 transition-all ${isSelected ? "bg-[#fcd535] border-[#fcd535]" : "border-[#474d57]"}`}>
+          {isSelected && <CheckCircle2 size={10} className="text-[#0b0e11]" />}
+        </div>
+
+        {/* Globe icon */}
+        <div className="w-8 h-8 bg-[#1e2329] border border-[#2b3139] rounded-lg flex items-center justify-center flex-shrink-0">
+          <Globe size={14} className="text-[#848e9c]" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm font-semibold text-[#eaecef]">{item.website.domain}</span>
+            <div className="text-right">
+              <p className="text-sm font-bold text-[#fcd535] font-mono">{formatCurrency(totalPrice)}</p>
+              <p className="text-xs text-[#848e9c] font-mono">{formatCurrency(item.unitPrice)} × {item.entries.length}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-xs text-[#848e9c] mb-2">
+            <span>DR {item.website.dr}</span>
+            <span>{item.website.traffic.toLocaleString()} traffic</span>
+            <span className="bg-[#2b3139] px-1.5 py-0.5 rounded text-[#b7bdc6]">
+              {formatType(item.type as any)} · {formatDurationShort(item.duration as any)}
+            </span>
+            <span className="bg-[#fcd535]/10 px-1.5 py-0.5 rounded text-[#fcd535] font-medium">
+              {item.entries.length} link{item.entries.length > 1 ? "s" : ""}
+            </span>
+            {isActive && (
+              <span className="flex items-center gap-1 text-[#0ecb81]">
+                <div className="w-1.5 h-1.5 bg-[#0ecb81] rounded-full animate-pulse" />
+                Đang hoạt động
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4 text-xs text-[#848e9c]">
+            <span>
+              <Calendar size={9} className="inline mr-1" />
+              {formatDate(item.startDate)} → {formatDate(item.endDate)}
+            </span>
+            {isExpiringSoon && !isExpired && (
+              <span className="text-[#f0b90b] font-medium">⚠️ Còn {daysLeft} ngày</span>
+            )}
+            {isExpired && (
+              <span className="flex items-center gap-1 text-[#f6465d] font-medium">
+                <XCircle size={9} />
+                Đã hết hạn
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Entries Table */}
+      {item.entries.length > 0 && (
+        <div className="bg-[#0b0e11] border border-[#2b3139] rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-[#2b3139] bg-[#181a20]">
+            <span className="text-xs font-semibold text-[#848e9c]">Textlinks ({item.entries.length})</span>
+            {onEditEntries && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEditEntries(item.id, item.entries)
+                }}
+                className="flex items-center gap-1 text-xs text-[#5b8def] hover:text-[#fcd535] transition-colors"
+              >
+                <Edit3 size={10} />
+                Sửa
+              </button>
+            )}
+          </div>
+
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[#2b3139]">
+                <th className="px-3 py-1.5 text-left text-[#848e9c] font-medium w-8">#</th>
+                <th className="px-3 py-1.5 text-left text-[#848e9c] font-medium">Anchor</th>
+                <th className="px-3 py-1.5 text-left text-[#848e9c] font-medium">URL</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleEntries.map((entry, idx) => (
+                <tr key={entry.id} className="border-b border-[#2b3139] last:border-0 hover:bg-[#181a20]/50">
+                  <td className="px-3 py-2 text-[#848e9c]">{idx + 1}</td>
+                  <td className="px-3 py-2 text-[#eaecef] break-words">{entry.anchorText}</td>
+                  <td className="px-3 py-2">
+                    <a
+                      href={entry.targetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#5b8def] hover:text-[#fcd535] transition-colors break-all"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {cleanUrl(entry.targetUrl)}
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {hiddenCount > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setExpanded(!expanded)
+              }}
+              className="w-full px-3 py-2 flex items-center justify-center gap-1 text-xs text-[#848e9c] hover:text-[#fcd535] hover:bg-[#181a20] transition-colors border-t border-[#2b3139]"
+            >
+              {expanded ? (
+                <>
+                  <ChevronUp size={12} />
+                  Ẩn bớt
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={12} />
+                  Xem thêm {hiddenCount} link{hiddenCount > 1 ? "s" : ""}
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

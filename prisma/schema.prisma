@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id       String @id @default(cuid())
+  email    String @unique
+  password String
+  name     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Website {
+  id           String   @id @default(cuid())
+  domain       String   @unique
+  dr           Int
+  traffic      Int
+  buyPrice     Float
+  purchaseDate DateTime @default(now())
+  wpUrl        String?  // WordPress admin URL (e.g., https://example.com/wp-admin)
+  wpUsername   String?  // WordPress admin username
+  wpPassword   String?  // WordPress admin password (encrypted in production)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  textlinkPrices TextlinkPrice[]
+  orderItems     OrderItem[]
+}
+
+model TextlinkPrice {
+  id            String   @id @default(cuid())
+  websiteId     String
+  type          TextlinkType
+  duration      Duration
+  price         Float
+  effectiveFrom DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId, effectiveFrom])
+}
+
+model Customer {
+  id               String   @id @default(cuid())
+  telegramUsername String?
+  name             String   @unique
+  note             String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  orders Order[]
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  customerId    String
+  paymentStatus PaymentStatus @default(ORDERED)
+  discount      Float         @default(0) // % chiết khấu, ví dụ 10 = 10%
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([customerId])
+}
+
+model OrderItem {
+  id        String          @id @default(cuid())
+  orderId   String
+  websiteId String
+  type      TextlinkType
+  duration  Duration
+  unitPrice Float
+  startDate DateTime
+  endDate   DateTime
+  status    OrderItemStatus @default(PENDING)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  order   Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  website Website           @relation(fields: [websiteId], references: [id], onDelete: Restrict)
+  entries TextlinkEntry[]
+
+  @@index([orderId])
+  @@index([websiteId])
+  @@index([endDate])
+  @@index([status])
+}
+
+model TextlinkEntry {
+  id          String    @id @default(cuid())
+  orderItemId String
+  anchorText  String
+  targetUrl   String
+  position    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@index([orderItemId])
+}
+
+model Expense {
+  id       String          @id @default(cuid())
+  category ExpenseCategory
+  amount   Float
+  note     String?
+  date     DateTime
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([date])
+  @@index([category])
+}
+
+enum TextlinkType {
+  FOOTER
+  HOMEPAGE
+}
+
+enum Duration {
+  ONE_MONTH
+  THREE_MONTHS
+}
+
+enum PaymentStatus {
+  ORDERED
+  PAID
+  UNPAID
+  DEBT
+}
+
+enum OrderItemStatus {
+  ACTIVE
+  EXPIRED
+  PENDING
+}
+
+enum ExpenseCategory {
+  WEBSITE_PURCHASE
+  VPS
+  DOMAIN_RENEWAL
+  PARTNER_SHARE
+  OTHER
+}

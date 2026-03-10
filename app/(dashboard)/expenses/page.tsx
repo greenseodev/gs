@@ -1,0 +1,292 @@
+"use client"
+
+import { useEffect, useState, useRef } from "react"
+import { Plus, Edit, Trash2, DollarSign, TrendingDown, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react"
+import { formatCurrency, formatDate } from "@/lib/formatters"
+import { toast } from "@/lib/toast"
+import ExpenseModal from "@/components/expenses/ExpenseModal"
+
+type Expense = {
+  id: string; category: string; amount: number; note: string | null; date: string; createdAt: string
+}
+
+const CATEGORIES: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  WEBSITE_PURCHASE: { label: "Mua website",     color: "text-[#fcd535]", bg: "bg-[#fcd535]/10", border: "border-[#fcd535]/20" },
+  VPS:              { label: "VPS/Hosting",      color: "text-[#5b8def]", bg: "bg-[#5b8def]/10", border: "border-[#5b8def]/20" },
+  DOMAIN_RENEWAL:   { label: "Gia hạn domain",  color: "text-[#f0b90b]", bg: "bg-[#f0b90b]/10", border: "border-[#f0b90b]/20" },
+  PARTNER_SHARE:    { label: "Chia sẻ đối tác", color: "text-[#0ecb81]", bg: "bg-[#0ecb81]/10", border: "border-[#0ecb81]/20" },
+  OTHER:            { label: "Khác",             color: "text-[#848e9c]", bg: "bg-[#848e9c]/10", border: "border-[#848e9c]/20" },
+}
+
+const MONTHS = ["Th1","Th2","Th3","Th4","Th5","Th6","Th7","Th8","Th9","Th10","Th11","Th12"]
+
+function MonthPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear())
+  const ref = useRef<HTMLDivElement>(null)
+
+  const selectedYear = value ? parseInt(value.split("-")[0]) : null
+  const selectedMonth = value ? parseInt(value.split("-")[1]) - 1 : null
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  const select = (monthIdx: number) => {
+    onChange(`${pickerYear}-${String(monthIdx + 1).padStart(2, "0")}`)
+    setOpen(false)
+  }
+
+  const displayLabel = value
+    ? `Tháng ${selectedMonth! + 1}, ${selectedYear}`
+    : "Tất cả các tháng"
+
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={() => setOpen(!open)}
+        className={`flex items-center gap-2 bg-[#0b0e11] border rounded-lg px-3 py-1.5 text-xs transition-colors min-w-[160px] ${
+          open ? "border-[#fcd535]/50 text-[#eaecef]" : "border-[#2b3139] text-[#848e9c] hover:border-[#474d57]"
+        }`}>
+        <span className="flex-1 text-left">{displayLabel}</span>
+        {value && (
+          <span onClick={e => { e.stopPropagation(); onChange("") }}
+            className="text-[#474d57] hover:text-[#f6465d] transition-colors text-xs font-bold leading-none">×</span>
+        )}
+        <ChevronDown size={11} className={`flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-1.5 right-0 bg-[#1e2329] border border-[#2b3139] rounded-xl shadow-2xl z-50 w-56 overflow-hidden">
+          {/* Year nav */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#2b3139]">
+            <button type="button" onClick={() => setPickerYear(y => y - 1)}
+              className="w-6 h-6 flex items-center justify-center text-[#848e9c] hover:text-[#eaecef] hover:bg-[#2b3139] rounded transition-colors">
+              <ChevronLeft size={12} />
+            </button>
+            <span className="text-sm font-bold text-[#eaecef]">{pickerYear}</span>
+            <button type="button" onClick={() => setPickerYear(y => y + 1)}
+              className="w-6 h-6 flex items-center justify-center text-[#848e9c] hover:text-[#eaecef] hover:bg-[#2b3139] rounded transition-colors">
+              <ChevronRight size={12} />
+            </button>
+          </div>
+
+          {/* Month grid */}
+          <div className="grid grid-cols-4 gap-1 p-3">
+            {MONTHS.map((m, i) => {
+              const isSelected = selectedYear === pickerYear && selectedMonth === i
+              const isCurrentMonth = new Date().getFullYear() === pickerYear && new Date().getMonth() === i
+              return (
+                <button key={i} type="button" onClick={() => select(i)}
+                  className={`py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    isSelected
+                      ? "bg-[#fcd535] text-[#0b0e11] font-bold"
+                      : isCurrentMonth
+                      ? "bg-[#fcd535]/10 text-[#fcd535] border border-[#fcd535]/20"
+                      : "text-[#848e9c] hover:bg-[#2b3139] hover:text-[#eaecef]"
+                  }`}>
+                  {m}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Footer shortcuts */}
+          <div className="flex gap-2 px-3 pb-3">
+            <button type="button" onClick={() => { const n = new Date(); select(n.getMonth()) }}
+              className="flex-1 text-xs text-[#fcd535] bg-[#fcd535]/5 border border-[#fcd535]/20 py-1.5 rounded-lg hover:bg-[#fcd535]/10 transition-colors font-medium">
+              Tháng này
+            </button>
+            {value && (
+              <button type="button" onClick={() => { onChange(""); setOpen(false) }}
+                className="flex-1 text-xs text-[#848e9c] bg-[#2b3139] py-1.5 rounded-lg hover:text-[#eaecef] transition-colors font-medium">
+                Xóa lọc
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CategoryBadge({ category }: { category: string }) {
+  const cfg = CATEGORIES[category] ?? CATEGORIES.OTHER
+  return (
+    <span className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+      {cfg.label}
+    </span>
+  )
+}
+
+export default function ExpensesPage() {
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
+  const [filterCategory, setFilterCategory] = useState("ALL")
+  const [filterMonth, setFilterMonth] = useState("")
+
+  useEffect(() => { fetchExpenses() }, [filterCategory, filterMonth])
+
+  const fetchExpenses = async () => {
+    setLoading(true)
+    try {
+      const p = new URLSearchParams()
+      if (filterCategory !== "ALL") p.append("category", filterCategory)
+      if (filterMonth) p.append("month", filterMonth)
+      const data = await (await fetch(`/api/expenses${p.toString() ? `?${p}` : ""}`)).json()
+      setExpenses(Array.isArray(data) ? data : [])
+    } catch (e) {
+      console.error(e)
+      setExpenses([])
+    }
+    finally { setLoading(false) }
+  }
+
+  const handleDelete = async (id: string) => {
+    // Show confirmation using native confirm for now - can be replaced with custom modal later
+    if (!window.confirm("Xóa chi phí này?")) return
+    try {
+      const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        toast.success("Đã xóa chi phí thành công")
+        fetchExpenses()
+      } else {
+        toast.error("Không thể xóa chi phí")
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error("Có lỗi xảy ra khi xóa chi phí")
+    }
+  }
+
+  const total = expenses.reduce((s, e) => s + e.amount, 0)
+  const breakdown = Object.entries(
+    expenses.reduce((acc, e) => ({ ...acc, [e.category]: (acc[e.category] || 0) + e.amount }), {} as Record<string, number>)
+  ).sort((a, b) => b[1] - a[1])
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-[#eaecef]">Quản lý Chi phí</h1>
+          <p className="text-xs text-[#848e9c] mt-0.5">{expenses.length} khoản chi</p>
+        </div>
+        <button onClick={() => { setSelectedExpense(null); setModalOpen(true) }}
+          className="flex items-center gap-1.5 text-xs text-[#0b0e11] bg-gradient-to-r from-[#fcd535] to-[#f0b90b] px-3 py-1.5 rounded-lg font-medium hover:from-[#f0b90b] hover:to-[#fcd535] transition-all glow-primary">
+          <Plus size={13} /> Thêm chi phí
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="lg:col-span-2 bg-[#181a20] border border-[#2b3139] rounded-lg px-5 py-4 flex items-center gap-4">
+          <div className="w-10 h-10 bg-[#f6465d]/10 rounded-xl flex items-center justify-center flex-shrink-0">
+            <TrendingDown size={18} className="text-[#f6465d]" />
+          </div>
+          <div>
+            <p className="text-xs text-[#848e9c]">Tổng chi phí</p>
+            <p className="text-2xl font-bold text-[#f6465d] font-mono">{formatCurrency(total)}</p>
+          </div>
+        </div>
+        {breakdown.slice(0, 2).map(([cat, amt]) => {
+          const cfg = CATEGORIES[cat] ?? CATEGORIES.OTHER
+          return (
+            <div key={cat} className="bg-[#181a20] border border-[#2b3139] rounded-lg px-4 py-3 flex items-center gap-3">
+              <div className={`w-7 h-7 ${cfg.bg} rounded-md flex items-center justify-center flex-shrink-0`}>
+                <DollarSign size={13} className={cfg.color} />
+              </div>
+              <div>
+                <p className="text-xs text-[#848e9c]">{cfg.label}</p>
+                <p className={`text-sm font-bold ${cfg.color}`}>{formatCurrency(amt)}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Filters */}
+      <div className="bg-[#181a20] border border-[#2b3139] rounded-xl px-5 py-4 flex flex-wrap items-end gap-4 justify-between">
+        <div>
+          <label className="block text-xs text-[#848e9c] mb-1.5 font-medium">Danh mục</label>
+          <div className="flex gap-1.5 flex-wrap">
+            <button onClick={() => setFilterCategory("ALL")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterCategory === "ALL" ? "bg-[#fcd535] text-[#0b0e11]" : "bg-[#1e2329] border border-[#2b3139] text-[#848e9c] hover:text-[#eaecef]"}`}>
+              Tất cả
+            </button>
+            {Object.entries(CATEGORIES).map(([k, v]) => (
+              <button key={k} onClick={() => setFilterCategory(k)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                  filterCategory === k ? `${v.bg} ${v.color} ${v.border}` : "bg-[#1e2329] border-[#2b3139] text-[#848e9c] hover:text-[#eaecef]"
+                }`}>
+                {v.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-[#848e9c] mb-1.5 font-medium">Tháng</label>
+          <MonthPicker value={filterMonth} onChange={setFilterMonth} />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-[#181a20] border border-[#2b3139] rounded-xl overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <div className="w-5 h-5 border-2 border-[#fcd535] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : expenses.length === 0 ? (
+          <div className="text-center py-16">
+            <DollarSign size={28} className="text-[#474d57] mx-auto mb-3" />
+            <p className="text-sm text-[#848e9c]">Chưa có khoản chi phí nào</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[#2b3139]">
+                  {["Ngày", "Danh mục", "Số tiền", "Ghi chú", ""].map((h, i) => (
+                    <th key={i} className={`px-5 py-3 text-xs font-medium text-[#848e9c] uppercase tracking-wide ${i === 4 ? "text-right" : "text-left"}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.map(expense => (
+                  <tr key={expense.id} className="border-b border-[#2b3139] last:border-0 hover:bg-[#1e2329] transition-colors group">
+                    <td className="px-5 py-4 text-xs text-[#b7bdc6]">{formatDate(expense.date)}</td>
+                    <td className="px-5 py-4"><CategoryBadge category={expense.category} /></td>
+                    <td className="px-5 py-4">
+                      <span className="text-sm font-bold text-[#f6465d]">−{formatCurrency(expense.amount)}</span>
+                    </td>
+                    <td className="px-5 py-4 max-w-[240px]">
+                      <span className="text-xs text-[#848e9c] truncate block">{expense.note || "—"}</span>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => { setSelectedExpense(expense); setModalOpen(true) }}
+                          className="flex items-center gap-1 text-xs text-[#5b8def] bg-[#5b8def]/10 border border-[#5b8def]/20 px-2.5 py-1 rounded-lg hover:bg-[#5b8def]/20 transition-colors font-medium">
+                          <Edit size={11} /> Sửa
+                        </button>
+                        <button onClick={() => handleDelete(expense.id)}
+                          className="flex items-center gap-1 text-xs text-[#f6465d] bg-[#f6465d]/10 border border-[#f6465d]/20 px-2.5 py-1 rounded-lg hover:bg-[#f6465d]/20 transition-colors font-medium">
+                          <Trash2 size={11} /> Xóa
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {modalOpen && (
+        <ExpenseModal expense={selectedExpense} onClose={() => { setModalOpen(false); setSelectedExpense(null); fetchExpenses() }} />
+      )}
+    </div>
+  )
+}

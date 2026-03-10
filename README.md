@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Textlink Manager - Hệ thống quản lý mua bán textlink
 
-## Getting Started
+## Giới thiệu
+Web app quản lý mua bán textlink nội bộ với 2 người dùng cùng quyền. Theo dõi website, đơn hàng, doanh thu, chi phí và lãi/lỗ.
 
-First, run the development server:
+## Tech Stack
+- **Frontend**: Next.js 15 (App Router) + Tailwind CSS
+- **Backend**: Next.js API Routes
+- **Database**: PostgreSQL + Prisma ORM
+- **Auth**: NextAuth.js (email/password)
+- **Icons**: Lucide React
+- **Excel Export**: ExcelJS
 
+## Cài đặt
+
+### 1. Cài đặt dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Cấu hình database
+Tạo file `.env` từ `.env.example` và cập nhật thông tin database PostgreSQL của bạn.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Chạy migration
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Tạo user đầu tiên
+Mở Prisma Studio để tạo user:
+```bash
+npx prisma studio
+```
 
-## Learn More
+### 5. Chạy development server
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Truy cập: http://localhost:3000
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Chức năng chính
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 1. Dashboard
+- Tổng doanh thu (hôm nay, tuần, tháng, quý, năm)
+- Tổng chi phí tháng
+- Lãi ròng tháng
+- Cảnh báo textlink sắp hết hạn (2 ngày)
 
-## Deploy on Vercel
+### 2. Quản lý Website
+- CRUD website (domain, DR, traffic, giá mua)
+- Quản lý bảng giá textlink (footer/homepage × 1/3 tháng)
+- Lịch sử thay đổi giá
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 3. Quản lý Khách hàng
+- CRUD khách hàng
+- Lịch sử đơn hàng
+- Tổng doanh thu
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 4. Quản lý Đơn hàng
+- Tạo đơn với nhiều textlink
+- Trạng thái: Pending / Paid / Unpaid / Debt
+- Gia hạn textlink
+
+### 5. Quản lý Chi phí
+- Các loại chi phí
+- CRUD với ghi chú và ngày chi
+
+### 6. Báo cáo
+- Lãi/lỗ theo tháng
+- Lãi/lỗ từng website
+- Xuất Excel
+
+## TODO
+- [ ] Hoàn thiện các trang Customers, Orders, Expenses, Reports
+- [ ] Script seed tạo user mặc định
+- [ ] Tính năng xuất Excel
+- [ ] Cron job cập nhật status textlink hết hạn
+- [ ] Testing
