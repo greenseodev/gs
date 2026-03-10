@@ -128,7 +128,7 @@ async function getDashboardStats() {
     const total = calculateOrderTotal(order)
     const customerId = order.customerId
     if (!customerRevenueMap[customerId]) {
-      customerRevenueMap[customerId] = { name: order.customer?.name ?? "—", revenue: 0 }
+      customerRevenueMap[customerId] = { name: (order as any).customer?.name ?? "—", revenue: 0 }
     }
     customerRevenueMap[customerId].revenue += total
   }
