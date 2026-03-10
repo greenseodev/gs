@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, ArrowRight, Plus, Trash2, User, Globe, CheckCircle2, Search, Link2, ExternalLink, AlertCircle } from "lucide-react"
-import { formatCurrency, formatType, formatDuration, calcItemTotal, calcOrderTotal } from "@/lib/formatters"
+import { formatCurrency, formatType, formatDuration, calcItemTotal, calcOrderTotal, formatDate, formatDateInput } from "@/lib/formatters"
 import { calculateEndDate } from "@/lib/orderUtils"
 import { toast } from "@/lib/toast"
 import Link from "next/link"
@@ -123,6 +123,19 @@ export default function CreateOrderPage() {
 
   const overridePrice = (idx: number, val: number) =>
     setItems(p => p.map((item, i) => i === idx ? { ...item, unitPrice: val } : item))
+
+  const updateStartDate = (idx: number, newStartDate: string) => {
+    setItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item
+      const startDate = new Date(newStartDate)
+      const endDate = calculateEndDate(startDate, item.duration as "ONE_MONTH" | "THREE_MONTHS")
+      return {
+        ...item,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      }
+    }))
+  }
 
   const updateItemEntry = (itemIdx: number, entryIdx: number, field: 'anchorText' | 'targetUrl', value: string) => {
     setItems(prev => prev.map((item, i) => {
@@ -381,23 +394,47 @@ export default function CreateOrderPage() {
               <div className="divide-y divide-[#2b3139]">
                 {items.map((item, itemIdx) => (
                   <div key={itemIdx} className="px-5 py-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-7 h-7 bg-[#1e2329] border border-[#2b3139] rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Globe size={13} className="text-[#848e9c]" />
+                    <div className="space-y-3 mb-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-7 h-7 bg-[#1e2329] border border-[#2b3139] rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Globe size={13} className="text-[#848e9c]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-[#eaecef]">{item.websiteDomain}</p>
+                          <p className="text-xs text-[#848e9c]">
+                            {formatType(item.type as any)} · {formatDuration(item.duration as any)} · {item.entries.length} link{item.entries.length > 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input type="number" value={item.unitPrice} step="0.01"
+                            onChange={e => overridePrice(itemIdx, parseFloat(e.target.value))}
+                            className="w-28 bg-[#0b0e11] border border-[#2b3139] rounded-lg px-3 py-1.5 text-xs text-[#fcd535] font-bold text-right focus:outline-none focus:border-[#fcd535]/50" />
+                          <button onClick={() => removeItem(itemIdx)} className="w-7 h-7 flex items-center justify-center text-[#f6465d] bg-[#f6465d]/10 border border-[#f6465d]/20 rounded-lg hover:bg-[#f6465d]/20 transition-colors">
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-[#eaecef]">{item.websiteDomain}</p>
-                        <p className="text-xs text-[#848e9c]">
-                          {formatType(item.type as any)} · {formatDuration(item.duration as any)} · {item.entries.length} link{item.entries.length > 1 ? 's' : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input type="number" value={item.unitPrice} step="0.01"
-                          onChange={e => overridePrice(itemIdx, parseFloat(e.target.value))}
-                          className="w-28 bg-[#0b0e11] border border-[#2b3139] rounded-lg px-3 py-1.5 text-xs text-[#fcd535] font-bold text-right focus:outline-none focus:border-[#fcd535]/50" />
-                        <button onClick={() => removeItem(itemIdx)} className="w-7 h-7 flex items-center justify-center text-[#f6465d] bg-[#f6465d]/10 border border-[#f6465d]/20 rounded-lg hover:bg-[#f6465d]/20 transition-colors">
-                          <Trash2 size={12} />
-                        </button>
+
+                      {/* Date inputs */}
+                      <div className="ml-10 grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-medium text-[#b7bdc6] mb-1.5 block">Ngày bắt đầu</label>
+                          <input
+                            type="date"
+                            value={formatDateInput(item.startDate)}
+                            onChange={e => updateStartDate(itemIdx, e.target.value)}
+                            className="w-full bg-[#0b0e11] border border-[#2b3139] rounded-lg px-3 py-1.5 text-xs text-[#eaecef] focus:outline-none focus:border-[#fcd535]/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-[#b7bdc6] mb-1.5 block">Ngày kết thúc (tự động)</label>
+                          <input
+                            type="text"
+                            value={formatDate(item.endDate)}
+                            readOnly
+                            className="w-full bg-[#1e2329] border border-[#2b3139] rounded-lg px-3 py-1.5 text-xs text-[#848e9c] cursor-not-allowed"
+                          />
+                        </div>
                       </div>
                     </div>
 

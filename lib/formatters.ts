@@ -92,6 +92,18 @@ export function formatDate(date: Date | string): string {
 }
 
 /**
+ * Format date for HTML input type="date" (YYYY-MM-DD)
+ * @example formatDateInput(new Date("2024-01-15")) => "2024-01-15"
+ */
+export function formatDateInput(date: Date | string): string {
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/**
  * Format date and time as Vietnamese format
  * @example formatDateTime("2024-01-15T10:30") => "15/01/2024, 10:30:00"
  */
