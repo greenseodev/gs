@@ -51,7 +51,10 @@ export async function GET(request: NextRequest) {
       include: {
         customer: true,
         orderItems: {
-          include: { website: true },
+          include: {
+            website: true,
+            entries: true,
+          },
         },
       },
     })
@@ -63,7 +66,12 @@ export async function GET(request: NextRequest) {
     })
 
     const totalRevenue = paidOrders.reduce((sum, o) => {
-      const orderTotal = o.orderItems.reduce((s, item) => s + item.unitPrice, 0)
+      const subtotal = o.orderItems.reduce((s, item) => {
+        const entriesCount = (item as any).entries?.length ?? 1
+        return s + (item.unitPrice * entriesCount)
+      }, 0)
+      const discount = (o as any).discount ?? 0
+      const orderTotal = subtotal * (1 - discount / 100)
       return sum + orderTotal
     }, 0)
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
@@ -97,7 +105,12 @@ export async function GET(request: NextRequest) {
     ]
 
     paidOrders.forEach((order) => {
-      const orderTotal = order.orderItems.reduce((s, item) => s + item.unitPrice, 0)
+      const subtotal = order.orderItems.reduce((s, item) => {
+        const entriesCount = (item as any).entries?.length ?? 1
+        return s + (item.unitPrice * entriesCount)
+      }, 0)
+      const discount = (order as any).discount ?? 0
+      const orderTotal = subtotal * (1 - discount / 100)
       revenueSheet.addRow({
         orderId: order.id.slice(0, 8),
         customer: order.customer.name || order.customer.telegramUsername,

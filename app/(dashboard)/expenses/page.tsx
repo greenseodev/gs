@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useRef } from "react"
 import { Plus, Edit, Trash2, DollarSign, TrendingDown, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react"
-import { formatCurrency, formatDate } from "@/lib/formatters"
+import { formatCurrency } from "@/lib/formatters"
 import { toast } from "@/lib/toast"
 import ExpenseModal from "@/components/expenses/ExpenseModal"
+import { DateBadge } from "@/components/ui/DateBadge"
 
 type Expense = {
   id: string; category: string; amount: number; note: string | null; date: string; createdAt: string
@@ -256,7 +257,7 @@ export default function ExpensesPage() {
               <tbody>
                 {expenses.map(expense => (
                   <tr key={expense.id} className="border-b border-[#2b3139] last:border-0 hover:bg-[#1e2329] transition-colors group">
-                    <td className="px-5 py-4 text-xs text-[#b7bdc6]">{formatDate(expense.date)}</td>
+                    <td className="px-5 py-4"><DateBadge date={expense.date} /></td>
                     <td className="px-5 py-4"><CategoryBadge category={expense.category} /></td>
                     <td className="px-5 py-4">
                       <span className="text-sm font-bold text-[#f6465d]">−{formatCurrency(expense.amount)}</span>

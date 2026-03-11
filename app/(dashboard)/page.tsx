@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import RevenueChart from "@/components/dashboard/RevenueChart"
 import Link from "next/link"
+import { DateBadge } from "@/components/ui/DateBadge"
 
 // Helper function to calculate order total with discount
 function calculateOrderTotal(order: any) {
@@ -319,9 +320,7 @@ export default async function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#f0b90b]/10 border border-[#f0b90b]/20 rounded text-xs font-semibold text-[#f0b90b]">
-                        {new Date(item.endDate).toLocaleDateString("vi-VN")}
-                      </span>
+                      <DateBadge date={item.endDate} />
                       <Link href={`/orders/${item.orderId}`} className="text-xs text-[#0b0e11] bg-[#fcd535] px-2 py-0.5 rounded hover:bg-[#f0b90b] transition-colors font-medium">
                         Gia hạn
                       </Link>
@@ -350,9 +349,7 @@ export default async function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#f6465d]/10 border border-[#f6465d]/20 rounded text-xs font-semibold text-[#f6465d]">
-                        Hết {new Date(item.endDate).toLocaleDateString("vi-VN")}
-                      </span>
+                      <DateBadge date={item.endDate} />
                       <Link href={`/orders/${item.orderId}`} className="text-xs text-white bg-[#f6465d] px-2 py-0.5 rounded hover:bg-[#c9374a] transition-colors font-medium">
                         Liên hệ
                       </Link>
@@ -541,11 +538,9 @@ export default async function DashboardPage() {
                     <p className="text-xs font-semibold text-[#eaecef] truncate">{w.domain}</p>
                     <p className="text-xs text-[#848e9c] mt-0.5">DR {w.dr} · {Number(w.traffic ?? 0).toLocaleString()} traffic</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end gap-1">
                     <p className="text-xs font-semibold text-[#fcd535] font-mono">{formatCurrency(w.buyPrice)}</p>
-                    <span className="inline-flex items-center px-1.5 py-0.5 bg-[#2b3139] rounded text-[10px] text-[#848e9c] mt-0.5">
-                      {new Date(w.createdAt).toLocaleDateString("vi-VN")}
-                    </span>
+                    <DateBadge date={w.purchaseDate} />
                   </div>
                 </div>
               ))}

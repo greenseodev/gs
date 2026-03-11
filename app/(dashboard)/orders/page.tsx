@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { Plus, Eye, ShoppingCart, DollarSign, AlertCircle, TrendingUp } from "lucide-react"
-import { formatCurrency, formatDate, formatPaymentStatus, calcOrderTotal } from "@/lib/formatters"
+import { formatCurrency, formatPaymentStatus, calcOrderTotal } from "@/lib/formatters"
 import { toast } from "@/lib/toast"
 import Link from "next/link"
 import Select from "@/components/ui/Select"
+import { DateBadge } from "@/components/ui/DateBadge"
 
 type Order = {
   id: string
@@ -16,6 +17,7 @@ type Order = {
   orderItems: Array<{
     id: string
     unitPrice: number
+    startDate: string
     website: { domain: string }
     entries: Array<{ id: string }>
   }>
@@ -143,7 +145,7 @@ export default function OrdersPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#2b3139]">
-                  {["Mã đơn", "Khách hàng", "Textlinks", "Tổng tiền", "Trạng thái", "Ngày tạo", ""].map((h, i) => (
+                  {["Mã đơn", "Khách hàng", "Textlinks", "Tổng tiền", "Trạng thái", "Ngày đặt", ""].map((h, i) => (
                     <th key={i} className={`px-5 py-3 text-xs font-medium text-[#848e9c] uppercase tracking-wide ${i === 6 ? "text-right" : "text-left"}`}>{h}</th>
                   ))}
                 </tr>
@@ -207,7 +209,9 @@ export default function OrdersPage() {
                           className="min-w-35"
                         />
                       </td>
-                      <td className="px-5 py-3.5 text-xs text-[#848e9c]">{formatDate(order.createdAt)}</td>
+                      <td className="px-5 py-3.5">
+                        <DateBadge date={order.orderItems[0]?.startDate ?? order.createdAt} />
+                      </td>
                       <td className="px-5 py-3.5 text-right">
                         <Link href={`/orders/${order.id}`}
                           className="inline-flex items-center gap-1 text-xs text-[#5b8def] bg-[#5b8def]/10 border border-[#5b8def]/20 px-2.5 py-1 rounded-lg hover:bg-[#5b8def]/20 transition-colors opacity-0 group-hover:opacity-100">

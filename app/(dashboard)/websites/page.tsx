@@ -6,6 +6,7 @@ import { formatCurrency, formatType, formatDuration } from "@/lib/formatters"
 import { toast } from "@/lib/toast"
 import WebsiteModal from "@/components/websites/WebsiteModal"
 import PriceModal from "@/components/websites/PriceModal"
+import { DateBadge } from "@/components/ui/DateBadge"
 
 type Website = {
   id: string
@@ -49,13 +50,16 @@ function TrafficBadge({ traffic }: { traffic: number }) {
   )
 }
 
-function PriceTag({ type, duration, price }: { type: string; duration: string; price: number }) {
+function PriceTag({ type, duration, price, effectiveFrom }: { type: string; duration: string; price: number; effectiveFrom?: string }) {
   return (
-    <div className="bg-[#1e2329] border border-[#2b3139] rounded-lg px-2.5 py-2 flex flex-col gap-1 hover:border-[#474d57] transition-colors">
+    <div className="bg-[#1e2329] border border-[#2b3139] rounded-lg px-2.5 py-2 flex flex-col gap-1.5 hover:border-[#474d57] transition-colors">
       <span className="text-[10px] text-[#848e9c] uppercase tracking-wide font-medium">
         {formatType(type as any)} · {formatDuration(duration as any)}
       </span>
       <span className="text-xs font-bold text-[#fcd535] font-mono">{formatCurrency(price)}</span>
+      {effectiveFrom && (
+        <DateBadge date={effectiveFrom} />
+      )}
     </div>
   )
 }
@@ -249,11 +253,12 @@ export default function WebsitesPage() {
               </div>
 
               {/* Badges */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <DRBadge dr={website.dr} />
                 <TrafficBadge traffic={website.traffic} />
+                <DateBadge date={website.purchaseDate} />
                 <span className="text-xs text-[#848e9c]">
-                  Mua: <span className="text-[#fcd535] font-semibold font-mono">{formatCurrency(website.buyPrice)}</span>
+                  <span className="text-[#fcd535] font-semibold font-mono">{formatCurrency(website.buyPrice)}</span>
                 </span>
               </div>
             </div>
@@ -363,6 +368,7 @@ export default function WebsitesPage() {
                       type={price.type}
                       duration={price.duration}
                       price={price.price}
+                      effectiveFrom={price.effectiveFrom}
                     />
                   ))}
                 </div>

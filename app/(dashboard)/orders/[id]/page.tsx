@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, RefreshCw, Edit3, Trash2 } from "lucide-react"
-import { formatCurrency, formatDate, formatPaymentStatus, calcOrderTotal } from "@/lib/formatters"
+import { formatCurrency, formatPaymentStatus, calcOrderTotal } from "@/lib/formatters"
 import { toast } from "@/lib/toast"
 import Link from "next/link"
 import OrderItemCard from "@/components/orders/OrderItemCard"
 import EditEntriesModal from "@/components/orders/EditEntriesModal"
+import { DateBadge } from "@/components/ui/DateBadge"
 
 type TextlinkEntry = {
   id: string
@@ -130,7 +131,9 @@ export default function OrderDetailPage() {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-[#eaecef]">Đơn #{order.id.slice(0, 8)}</h1>
-            <p className="text-xs text-[#848e9c] mt-0.5">Tạo ngày {formatDate(order.createdAt)}</p>
+            <div className="mt-1">
+              <DateBadge date={order.createdAt} />
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">

@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Globe, Calendar, CheckCircle2, XCircle, ChevronDown, ChevronUp, Edit3 } from "lucide-react"
-import { formatCurrency, formatDate, formatType, formatDurationShort, calcItemTotal } from "@/lib/formatters"
+import { Globe, CheckCircle2, XCircle, ChevronDown, ChevronUp, Edit3 } from "lucide-react"
+import { formatCurrency, formatType, formatDurationShort, calcItemTotal } from "@/lib/formatters"
 import { getDisplayStatus, getDaysRemaining, isExpiringSoon as checkExpiringSoon, isExpired as checkExpired } from "@/lib/orderUtils"
+import { DateBadge } from "@/components/ui/DateBadge"
 
 const PREVIEW_COUNT = 4
 
@@ -94,16 +95,15 @@ export default function OrderItemCard({ item, isSelected, onToggle, onEditEntrie
             )}
           </div>
 
-          <div className="flex items-center gap-4 text-xs text-[#848e9c]">
-            <span>
-              <Calendar size={9} className="inline mr-1" />
-              {formatDate(item.startDate)} → {formatDate(item.endDate)}
-            </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <DateBadge date={item.startDate} />
+            <span className="text-xs text-[#848e9c]">→</span>
+            <DateBadge date={item.endDate} />
             {isExpiringSoon && !isExpired && (
-              <span className="text-[#f0b90b] font-medium">⚠️ Còn {daysLeft} ngày</span>
+              <span className="text-xs text-[#f0b90b] font-medium">⚠️ Còn {daysLeft} ngày</span>
             )}
             {isExpired && (
-              <span className="flex items-center gap-1 text-[#f6465d] font-medium">
+              <span className="flex items-center gap-1 text-xs text-[#f6465d] font-medium">
                 <XCircle size={9} />
                 Đã hết hạn
               </span>
