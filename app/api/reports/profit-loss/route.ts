@@ -40,12 +40,10 @@ export async function GET(request: NextRequest) {
     const paidOrders = await prisma.order.findMany({
       where: {
         paymentStatus: "PAID",
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
+        orderItems: { some: { startDate: { gte: startDate, lte: endDate } } },
       },
       include: {
+        customer: true,
         orderItems: {
           include: {
             website: true,
@@ -118,12 +116,26 @@ export async function GET(request: NextRequest) {
 
     const netProfit = totalRevenue - totalExpenses
 
+    // Customer revenue breakdown
+    const customerStats: Record<string, { name: string; revenue: number; orderCount: number }> = {}
+    for (const order of paidOrders) {
+      const customer = (order as any).customer
+      const customerId = order.customerId
+      if (!customerStats[customerId]) {
+        customerStats[customerId] = { name: customer?.name ?? "—", revenue: 0, orderCount: 0 }
+      }
+      customerStats[customerId].revenue += calculateOrderTotal(order)
+      customerStats[customerId].orderCount += 1
+    }
+    const customerRevenue = Object.values(customerStats).sort((a, b) => b.revenue - a.revenue)
+
     return NextResponse.json({
       period: { startDate, endDate },
       totalRevenue,
       totalExpenses,
       netProfit,
       websiteProfitLoss,
+      customerRevenue,
       expensesByCategory: expenses.reduce((acc: any, exp) => {
         if (!acc[exp.category]) {
           acc[exp.category] = 0

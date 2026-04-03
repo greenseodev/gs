@@ -23,10 +23,10 @@ export async function GET(request: NextRequest) {
     if (month) {
       const [year, monthNum] = month.split("-")
       const startDate = new Date(parseInt(year), parseInt(monthNum) - 1, 1)
-      const endDate = new Date(parseInt(year), parseInt(monthNum), 0)
+      const nextMonthStart = new Date(parseInt(year), parseInt(monthNum), 1)
       where.date = {
         gte: startDate,
-        lte: endDate,
+        lt: nextMonthStart,
       }
     }
 

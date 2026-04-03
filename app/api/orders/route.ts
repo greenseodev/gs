@@ -12,9 +12,24 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const paymentStatus = searchParams.get("paymentStatus")
+    const month = searchParams.get("month") // format: YYYY-MM
+
+    const where: any = {}
+    if (paymentStatus) where.paymentStatus = paymentStatus
+    if (month) {
+      const [y, m] = month.split("-")
+      where.orderItems = {
+        some: {
+          startDate: {
+            gte: new Date(parseInt(y), parseInt(m) - 1, 1),
+            lt: new Date(parseInt(y), parseInt(m), 1),
+          },
+        },
+      }
+    }
 
     const orders = await prisma.order.findMany({
-      where: paymentStatus ? { paymentStatus: paymentStatus as any } : undefined,
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         customer: true,

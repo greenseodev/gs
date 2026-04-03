@@ -7,7 +7,7 @@ import { useState } from "react"
 import {
   LayoutDashboard, Globe, ShoppingCart,
   Users, DollarSign, BarChart3, LogOut,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Info,
 } from "lucide-react"
 
 const menuItems = [
@@ -17,6 +17,7 @@ const menuItems = [
   { name: "Khách hàng", href: "/customers", icon: Users },
   { name: "Chi phí", href: "/expenses", icon: DollarSign },
   { name: "Báo cáo", href: "/reports", icon: BarChart3 },
+  { name: "Thông tin", href: "/info", icon: Info },
 ]
 
 export default function Sidebar() {

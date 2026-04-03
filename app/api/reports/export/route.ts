@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     const paidOrders = await prisma.order.findMany({
       where: {
         paymentStatus: "PAID",
-        createdAt: { gte: startDate, lte: endDate },
+        orderItems: { some: { startDate: { gte: startDate, lte: endDate } } },
       },
       include: {
         customer: true,
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
       revenueSheet.addRow({
         orderId: order.id.slice(0, 8),
         customer: order.customer.name || order.customer.telegramUsername,
-        date: order.createdAt.toLocaleDateString("vi-VN"),
+        date: ((order.orderItems[0] as any)?.startDate ?? order.createdAt).toLocaleDateString("vi-VN"),
         amount: orderTotal.toFixed(2),
       })
     })
